@@ -58,9 +58,8 @@ int main(int argc, char** argv) {
 
       // and also, if we're no longer in a table, then mark it as such
       // and also go ahead and process the table in the buffer
-      if(tblLnActive) {
+      if(tblLnActive)
         processTbl(buf, content, line);
-      }
 
       tblLnActive = false;
     }
@@ -69,13 +68,19 @@ int main(int argc, char** argv) {
     buf.push_back(line);
   }
 
+  // process residual table if it's still in the buffer
+  if(tblLnActive)
+    processTbl(buf, content, line);
+
   // flush the buffer
   for(size_t i = 0; i < buf.size(); i++) {
     cout << buf[i] << endl;
   }
 
+  // close out the file
   srcFile.close();
 
+  // so long, and thanks for all the fish!
   return 0;
 }
 
