@@ -127,24 +127,33 @@ int main(int argc, char** argv) {
               tblArr[i][j] += " ";
         }
 
-        // XXX we're just print stuff out here
+        // we're just printing stuff out here
         for(size_t i = 0; i < content.size(); i++) {
           cout << content[i] << endl;
         }
+        if(0 < content.size())
+          for(char c : content[content.size() - 1])
+            if(!isspace(c)) {
+              cout << endl;
+              break;
+            }
         content.clear();
 
         for(size_t i = 0; i < buf.size(); i++) { // rows
           cout << "|";
           for(size_t j = 0; j < maxCols; j++) { // columns
-            //cout << "[" << tblArr[i][j] << "]\t";
             cout << tblArr[i][j] << "|";
           }
           cout << endl;
         }
 
-        //content.resize(content.size() - buf.size());
         buf.clear();
 
+        for(char c : line)
+          if(!isspace(c)) {
+            cout << endl;
+            break;
+          }
       }
 
       tblLnActive = false;
@@ -152,12 +161,11 @@ int main(int argc, char** argv) {
 
     // add the current line to the buffer
     buf.push_back(line);
-
   }
 
-  // print the rest of the content
-  for(size_t i = 0; i < content.size(); i++) {
-    cout << content[i] << endl;
+  // flush the buffer
+  for(size_t i = 0; i < buf.size(); i++) {
+    cout << buf[i] << endl;
   }
 
   srcFile.close();
