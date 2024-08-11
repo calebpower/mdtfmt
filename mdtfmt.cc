@@ -11,6 +11,7 @@ void commitBuf(vector<string>&, vector<string>&);
 int countCols(const string&, const char);
 vector<string> splitCols(const string&);
 void trim(string &s);
+void tryPad(const string&);
 
 int main(int argc, char** argv) {
   if(2 != argc) {
@@ -132,11 +133,7 @@ int main(int argc, char** argv) {
           cout << content[i] << endl;
         }
         if(0 < content.size())
-          for(char c : content[content.size() - 1])
-            if(!isspace(c)) {
-              cout << endl;
-              break;
-            }
+          tryPad(content[content.size() - 1]);
         content.clear();
 
         for(size_t i = 0; i < buf.size(); i++) { // rows
@@ -149,11 +146,7 @@ int main(int argc, char** argv) {
 
         buf.clear();
 
-        for(char c : line)
-          if(!isspace(c)) {
-            cout << endl;
-            break;
-          }
+        tryPad(line);
       }
 
       tblLnActive = false;
@@ -218,18 +211,6 @@ int countCols(const string &haystack, const char needle) {
       ++count;
       end = true;
     }
-
-/*
-    if(!found) {
-      if('|' == c) {
-        found = true;
-      } else if(!isspace(c)) {
-        count++;
-        found = true;
-      }
-    }
-*/
-
   }
 
   if(!end) count++;
@@ -276,4 +257,12 @@ void trim(string &s) {
       find_if(s.rbegin(), s.rend(), [](unsigned char c) {
         return !isspace(c);
       }).base(), s.end());
+}
+
+void tryPad(const string &s) {
+  for(size_t i = 0; i < s.size(); ++i)
+    if(!isspace(s[i])) {
+      cout << endl;
+      break;
+    }
 }
