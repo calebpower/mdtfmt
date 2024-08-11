@@ -6,8 +6,11 @@ using namespace std;
 
 bool isTblDiv(string&);
 bool isTblLn(string&);
-bool isWhtspc(char&);
-void commitBuf(vector<string> &, vector<string> &);
+bool isWhtspc(const char&);
+void commitBuf(vector<string>&, vector<string>&);
+int countCols(const string&, const char);
+vector<string> splitCols(const string&);
+void trim(string &s);
 
 int main(int argc, char** argv) {
   if(2 != argc) {
@@ -54,9 +57,47 @@ int main(int argc, char** argv) {
       // and also, if we're no longer in a table, then mark it as such
       // and also go ahead and process the table in the buffer
       if(tblLnActive) {
+
+        int maxCols = 0;
         for(string line : buf) {
-        
+          int mp = countCols(line, '|');
+          if(mp > maxCols)
+            maxCols = mp;
         }
+
+        cout << "max cols is " << maxCols << endl;
+
+        string tblArr[maxCols][buf.size()];
+        int colSzs[maxCols];
+        for(size_t i = 0; i < maxCols; i++)
+          colSzs[i] = 0;
+
+        for(size_t i = 0; i < buf.size(); i++) {
+          vector<string> row = splitCols(buf[i]);
+          for(size_t j = 0; j < row.size() && j < maxCols; j++) {
+            trim(row[j]);
+            tblArr[j][i] = row[j];
+            if(colSzs[j] < row[j].size())
+              colSzs[j] = row[j].size();
+          }
+          for(size_t j = row.size(); j < maxCols; j++) {
+            tblArr[j][i] = "";
+          }
+        }
+
+        cout << endl;
+        for(size_t i = 0; i < maxCols; i++) {
+          cout << colSzs[i] << " ";
+        }
+        cout << endl << endl;
+
+        for(size_t i = 0; i < buf.size(); i++) {
+          for(size_t j = 0; j < maxCols; j++) {
+            cout << "[" << tblArr[j][i] << "]\t";
+          }
+          cout << endl;
+        }
+
       }
 
       tblLnActive = false;
@@ -97,4 +138,82 @@ void commitBuf(vector<string> &src, vector<string> &dest) {
     dest.insert(end(dest), begin(src), end(src));
     src.clear();
   }
+}
+
+int countCols(const string &haystack, const char needle) {
+  int count = 0;
+  bool esc = false;
+  bool found = false;
+  bool end = false;
+
+  for(char c : haystack) {
+    if(!isspace(c))
+      end = false;
+
+    if(esc)
+      esc = false;
+    else if('\\' == c)
+      esc = true;
+    else if(needle == c) {
+      ++count;
+      end = true;
+    }
+
+/*
+    if(!found) {
+      if('|' == c) {
+        found = true;
+      } else if(!isspace(c)) {
+        count++;
+        found = true;
+      }
+    }
+*/
+
+  }
+
+  if(!end) count++;
+  return count - 1;
+}
+
+vector<string> splitCols(const string &s) {
+  vector<string> res;
+  string curr;
+  bool esc = false;
+  bool trimmed = false;
+
+  for(size_t i = 0; i < s.length(); i++) {
+    if(esc) {
+      curr += s[i];
+      esc = false;
+    } else if('\\' == s[i]) {
+      esc = true;
+      curr += s[i];
+    } else if('|' == s[i]) {
+      if(trimmed)
+        res.push_back(curr);
+      else trimmed = true;
+      curr.clear();
+    } else {
+      curr += s[i];
+    }
+  }
+
+  if(trimmed)
+    res.push_back(curr);
+  else trimmed = true;
+
+  return res;
+}
+
+void trim(string &s) {
+  s.erase(
+      s.begin(),
+      find_if(s.begin(), s.end(), [](unsigned char c) {
+        return !isspace(c);
+      }));
+  s.erase(
+      find_if(s.rbegin(), s.rend(), [](unsigned char c) {
+        return !isspace(c);
+      }).base(), s.end());
 }
