@@ -36,7 +36,6 @@ int main(int argc, char** argv) {
   vector<string> buf;
 
   bool tblLnActive = false;
-  bool tblDvActive = false;
 
   // read the file
   while(getline(srcFile, line)) {
@@ -139,7 +138,7 @@ void processTbl(vector<string> &buf, vector<string> &content, const string &line
     string align = "";
 
     // figure out how many dashes we're going to need for the divider row
-    for(size_t j = 0; j < (((3 > (colSzs[i] - lc - rc)) ? minDashes : (colSzs[i])) - lc - rc); j++)
+    for(size_t j = 0; j < (((minDashes > colSzs[i] - lc - rc) ? minDashes : colSzs[i]) - lc - rc); j++)
       align += "-"; // but add more as necessary
 
     if(lc) align = ":" + align; // check for and apply left/center alignment
