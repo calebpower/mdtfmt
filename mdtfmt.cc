@@ -12,6 +12,7 @@ int countCols(const string&, const char);
 vector<string> splitCols(const string&);
 void trim(string &s);
 void tryPad(const string&);
+void processTbl(vector<string>&, vector<string>&, const string&);
 
 int main(int argc, char** argv) {
   if(2 != argc) {
@@ -58,95 +59,7 @@ int main(int argc, char** argv) {
       // and also, if we're no longer in a table, then mark it as such
       // and also go ahead and process the table in the buffer
       if(tblLnActive) {
-
-        // go ahead and instantiate our column counter
-        int maxCols = 0;
-        for(int i = 0; i < buf.size(); i++) {
-          if(1 == i) continue;
-          int sz = countCols(buf[i], '|');
-          if(sz > maxCols)
-            maxCols = sz;
-        }
-
-        // make an array, [rows] x [columns]; this will be our table
-        string tblArr[buf.size()][maxCols];
-        int colSzs[maxCols]; // keep track of the column sizes
-        char colAligns[maxCols]; // and keep track of column alignments
-        for(size_t i = 0; i < maxCols; i++) {
-          colSzs[i] = 0; // make sure to zero out column sizes
-          colAligns[i] = (char)0x0; // and zero out column alignments
-        }
-
-        for(size_t i = 0; i < buf.size(); i++) { // now, for each row
-          vector<string> row = splitCols(buf[i]); // get the tokens of that row
-          for(size_t j = 0; j < row.size() && j < maxCols; j++) { // now for each cell in that row
-            trim(row[j]); // trim the cell down
-            tblArr[i][j] = ' ' + row[j] + ' '; // pre-pad the cell and put it in the correct col/row
-            if(1 == i) { // this is the divider
-              if(0 < row[j].size()) {
-                if(':' == row[j][0]) // left or center aligned (check first char)
-                  colAligns[j] |= 0xF0;
-                if(':' == row[j][row[j].size() - 1]) // right or center aligned (check last char)
-                  colAligns[j] |= 0x0F;
-              }
-            } else if(colSzs[j] < row[j].size() + 2) {
-              colSzs[j] = row[j].size() + 2;
-            }
-          }
-          for(size_t j = row.size(); j < maxCols; j++) { // empty cells should be blank
-            tblArr[i][j] = ""; // empty
-          }
-        }
-
-        // here, we're going to go ahead and take a look at alignment
-        const size_t minDashes = 3; // we need to start off with at least three dashes ("---")
-        for(size_t i = 0; i < maxCols; i++) { // for each column
-          bool lc = colAligns[i] & 0xF0;
-          bool rc = colAligns[i] & 0x0F;
-          string align = "";
-
-          for(size_t j = 0; j < (((3 > (colSzs[i] - lc - rc)) ? minDashes : (colSzs[i])) - lc - rc); j++)
-            align += "-"; // but add more as necessary
-
-          if(lc) align = ":" + align; // check for and apply left/center alignment
-          if(rc) align += ":";        // check for and apply right/center alignment
-
-          // now make sure we don't need to up the max size of the column
-          if(colSzs[i] < align.size() - 2)
-            colSzs[i] = align.size() - 2;
-          else if(colSzs[i] < minDashes)
-            colSzs[i] = minDashes;
-
-          tblArr[1][i] = align; // make sure to save the text
-        }
-
-        // now we should right-pad those values that need it
-        for(size_t i = 0; i < buf.size(); i++) { // rows
-          if(1 == i) continue;
-          for(size_t j = 0; j < maxCols; j++) // columns
-            while(tblArr[i][j].size() < colSzs[j])
-              tblArr[i][j] += " ";
-        }
-
-        // we're just printing stuff out here
-        for(size_t i = 0; i < content.size(); i++) {
-          cout << content[i] << endl;
-        }
-        if(0 < content.size())
-          tryPad(content[content.size() - 1]);
-        content.clear();
-
-        for(size_t i = 0; i < buf.size(); i++) { // rows
-          cout << "|";
-          for(size_t j = 0; j < maxCols; j++) { // columns
-            cout << tblArr[i][j] << "|";
-          }
-          cout << endl;
-        }
-
-        buf.clear();
-
-        tryPad(line);
+        processTbl(buf, content, line);
       }
 
       tblLnActive = false;
@@ -164,6 +77,97 @@ int main(int argc, char** argv) {
   srcFile.close();
 
   return 0;
+}
+
+void processTbl(vector<string> &buf, vector<string> &content, const string &line) {
+  // go ahead and instantiate our column counter
+  int maxCols = 0;
+  for(int i = 0; i < buf.size(); i++) {
+    if(1 == i) continue;
+    int sz = countCols(buf[i], '|');
+    if(sz > maxCols)
+      maxCols = sz;
+  }
+
+  // make an array, [rows] x [columns]; this will be our table
+  string tblArr[buf.size()][maxCols];
+  int colSzs[maxCols]; // keep track of the column sizes
+  char colAligns[maxCols]; // and keep track of column alignments
+  for(size_t i = 0; i < maxCols; i++) {
+    colSzs[i] = 0; // make sure to zero out column sizes
+    colAligns[i] = (char)0x0; // and zero out column alignments
+  }
+
+  for(size_t i = 0; i < buf.size(); i++) { // now, for each row
+    vector<string> row = splitCols(buf[i]); // get the tokens of that row
+    for(size_t j = 0; j < row.size() && j < maxCols; j++) { // now for each cell in that row
+      trim(row[j]); // trim the cell down
+      tblArr[i][j] = ' ' + row[j] + ' '; // pre-pad the cell and put it in the correct col/row
+      if(1 == i) { // this is the divider
+        if(0 < row[j].size()) {
+          if(':' == row[j][0]) // left or center aligned (check first char)
+            colAligns[j] |= 0xF0;
+          if(':' == row[j][row[j].size() - 1]) // right or center aligned (check last char)
+            colAligns[j] |= 0x0F;
+        }
+      } else if(colSzs[j] < row[j].size() + 2) {
+        colSzs[j] = row[j].size() + 2;
+      }
+    }
+    for(size_t j = row.size(); j < maxCols; j++) { // empty cells should be blank
+      tblArr[i][j] = ""; // empty
+    }
+  }
+
+  // here, we're going to go ahead and take a look at alignment
+  const size_t minDashes = 3; // we need to start off with at least three dashes ("---")
+  for(size_t i = 0; i < maxCols; i++) { // for each column
+    bool lc = colAligns[i] & 0xF0;
+    bool rc = colAligns[i] & 0x0F;
+    string align = "";
+
+    for(size_t j = 0; j < (((3 > (colSzs[i] - lc - rc)) ? minDashes : (colSzs[i])) - lc - rc); j++)
+      align += "-"; // but add more as necessary
+
+    if(lc) align = ":" + align; // check for and apply left/center alignment
+    if(rc) align += ":";        // check for and apply right/center alignment
+
+    // now make sure we don't need to up the max size of the column
+    if(colSzs[i] < align.size() - 2)
+      colSzs[i] = align.size() - 2;
+    else if(colSzs[i] < minDashes)
+      colSzs[i] = minDashes;
+
+    tblArr[1][i] = align; // make sure to save the text
+  }
+
+  // now we should right-pad those values that need it
+  for(size_t i = 0; i < buf.size(); i++) { // rows
+    if(1 == i) continue;
+    for(size_t j = 0; j < maxCols; j++) // columns
+      while(tblArr[i][j].size() < colSzs[j])
+        tblArr[i][j] += " ";
+  }
+
+  // we're just printing stuff out here
+  for(size_t i = 0; i < content.size(); i++) {
+    cout << content[i] << endl;
+  }
+  if(0 < content.size())
+    tryPad(content[content.size() - 1]);
+  content.clear();
+
+  for(size_t i = 0; i < buf.size(); i++) { // rows
+    cout << "|";
+    for(size_t j = 0; j < maxCols; j++) { // columns
+      cout << tblArr[i][j] << "|";
+    }
+    cout << endl;
+  }
+
+  buf.clear();
+
+  tryPad(line);
 }
 
 bool isTblDiv(string& s) {
