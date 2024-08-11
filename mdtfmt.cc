@@ -58,32 +58,83 @@ int main(int argc, char** argv) {
       // and also go ahead and process the table in the buffer
       if(tblLnActive) {
 
+        // go ahead and instantiate our column counter
         int maxCols = 0;
-        for(string line : buf) {
-          int mp = countCols(line, '|');
-          if(mp > maxCols)
-            maxCols = mp;
+        for(int i = 0; i < buf.size(); i++) {
+          if(1 == i) continue;
+          int sz = countCols(buf[i], '|');
+          if(sz > maxCols)
+            maxCols = sz;
         }
 
-        cout << "max cols is " << maxCols << endl;
+        // make an array, [rows] x [columns]; this will be our table
+        string tblArr[buf.size()][maxCols];
+        int colSzs[maxCols]; // keep track of the column sizes
+        char colAligns[maxCols]; // and keep track of column alignments
+        for(size_t i = 0; i < maxCols; i++) {
+          colSzs[i] = 0; // make sure to zero out column sizes
+          colAligns[i] = (char)0x0; // and zero out column alignments
+        }
 
-        string tblArr[maxCols][buf.size()];
-        int colSzs[maxCols];
-        for(size_t i = 0; i < maxCols; i++)
-          colSzs[i] = 0;
-
-        for(size_t i = 0; i < buf.size(); i++) {
-          vector<string> row = splitCols(buf[i]);
-          for(size_t j = 0; j < row.size() && j < maxCols; j++) {
-            trim(row[j]);
-            tblArr[j][i] = row[j];
-            if(colSzs[j] < row[j].size())
-              colSzs[j] = row[j].size();
+        for(size_t i = 0; i < buf.size(); i++) { // now, for each row
+          vector<string> row = splitCols(buf[i]); // get the tokens of that row
+          for(size_t j = 0; j < row.size() && j < maxCols; j++) { // now for each cell in that row
+            trim(row[j]); // trim the cell down
+            tblArr[i][j] = ' ' + row[j] + ' '; // pre-pad the cell and put it in the correct col/row
+            if(1 == i) { // this is the divider
+              if(0 < row[j].size()) {
+                if(':' == row[j][0]) // left or center aligned (check first char)
+                  colAligns[j] |= 0xF0;
+                if(':' == row[j][row[j].size() - 1]) // right or center aligned (check last char)
+                  colAligns[j] |= 0x0F;
+              }
+            } else if(colSzs[j] < row[j].size() + 2) {
+              colSzs[j] = row[j].size() + 2;
+            }
           }
-          for(size_t j = row.size(); j < maxCols; j++) {
-            tblArr[j][i] = "";
+          for(size_t j = row.size(); j < maxCols; j++) { // empty cells should be blank
+            tblArr[i][j] = ""; // empty
           }
         }
+
+        // XXX
+        cout << endl;
+        for(size_t i = 0; i < maxCols; i++) {
+          cout << colSzs[i] << " ";
+        }
+        cout << endl << endl;
+
+        // here, we're going to go ahead and take a look at alignment
+        const size_t minDashes = 3; // we need to start off with at least three dashes ("---")
+        for(size_t i = 0; i < maxCols; i++) { // for each column
+          bool lc = colAligns[i] & 0xF0;
+          bool rc = colAligns[i] & 0x0F;
+          string align = "";
+
+          for(size_t j = 0; j < (((3 > (colSzs[i] - lc - rc)) ? minDashes : (colSzs[i])) - lc - rc); j++)
+            align += "-"; // but add more as necessary
+
+          if(lc) align = ":" + align; // check for and apply left/center alignment
+          if(rc) align += ":";        // check for and apply right/center alignment
+
+          // now make sure we don't need to up the max size of the column
+          if(colSzs[i] < align.size() - 2)
+            colSzs[i] = align.size() - 2;
+          else if(colSzs[i] < minDashes)
+            colSzs[i] = minDashes;
+
+          tblArr[1][i] = align; // make sure to save the text
+        }
+
+        // now we should right-pad those values that need it
+        for(size_t i = 0; i < buf.size(); i++) { // rows
+          if(1 == i) continue;
+          for(size_t j = 0; j < maxCols; j++) // columns
+            while(tblArr[i][j].size() < colSzs[j])
+              tblArr[i][j] += " ";
+        }
+
+        // XXX we're just print stuff out here
 
         cout << endl;
         for(size_t i = 0; i < maxCols; i++) {
@@ -91,9 +142,9 @@ int main(int argc, char** argv) {
         }
         cout << endl << endl;
 
-        for(size_t i = 0; i < buf.size(); i++) {
-          for(size_t j = 0; j < maxCols; j++) {
-            cout << "[" << tblArr[j][i] << "]\t";
+        for(size_t i = 0; i < buf.size(); i++) { // rows
+          for(size_t j = 0; j < maxCols; j++) { // columns
+            cout << "[" << tblArr[i][j] << "]\t";
           }
           cout << endl;
         }
@@ -118,7 +169,7 @@ bool isTblDiv(string& s) {
   for(char& c : s)
     if('|' == c)
       pipeCnt++;
-    else if('-' != c && !isspace(c))
+    else if('-' != c && ':' != c && !isspace(c))
       return false;
   return 0 < pipeCnt;
 }
