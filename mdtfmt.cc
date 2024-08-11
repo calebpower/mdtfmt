@@ -1,3 +1,7 @@
+/*
+* Copyright (c) 2024 Caleb L. Power.
+*/
+
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -34,6 +38,7 @@ int main(int argc, char** argv) {
   bool tblLnActive = false;
   bool tblDvActive = false;
 
+  // read the file
   while(getline(srcFile, line)) {
     bool tla = isTblLn(line);
     bool tda = isTblDiv(line);
@@ -84,6 +89,7 @@ int main(int argc, char** argv) {
   return 0;
 }
 
+// format the buffer into a prettified markdown table
 void processTbl(vector<string> &buf, vector<string> &content, const string &line) {
   // go ahead and instantiate our column counter
   int maxCols = 0;
@@ -103,6 +109,7 @@ void processTbl(vector<string> &buf, vector<string> &content, const string &line
     colAligns[i] = (char)0x0; // and zero out column alignments
   }
 
+  // start calculating the sizes needed for the columns
   for(size_t i = 0; i < buf.size(); i++) { // now, for each row
     vector<string> row = splitCols(buf[i]); // get the tokens of that row
     for(size_t j = 0; j < row.size() && j < maxCols; j++) { // now for each cell in that row
@@ -131,6 +138,7 @@ void processTbl(vector<string> &buf, vector<string> &content, const string &line
     bool rc = colAligns[i] & 0x0F;
     string align = "";
 
+    // figure out how many dashes we're going to need for the divider row
     for(size_t j = 0; j < (((3 > (colSzs[i] - lc - rc)) ? minDashes : (colSzs[i])) - lc - rc); j++)
       align += "-"; // but add more as necessary
 
@@ -158,23 +166,26 @@ void processTbl(vector<string> &buf, vector<string> &content, const string &line
   for(size_t i = 0; i < content.size(); i++) {
     cout << content[i] << endl;
   }
-  if(0 < content.size())
+  if(0 < content.size()) // need to make sure a blank row exists before the table
     tryPad(content[content.size() - 1]);
   content.clear();
 
   for(size_t i = 0; i < buf.size(); i++) { // rows
-    cout << "|";
+    cout << "|"; // leading pipe
     for(size_t j = 0; j < maxCols; j++) { // columns
-      cout << tblArr[i][j] << "|";
+      cout << tblArr[i][j] << "|"; // content
     }
     cout << endl;
   }
 
   buf.clear();
 
-  tryPad(line);
+  tryPad(line); // need to make sure a blank row exists at the end of the table
 }
 
+// determines whether or not the string is likely a table divider (i.e. the alignment row);
+// basically, any string that has at least one pipe and only contains pipes, dashes,
+// colons, or whitespace characters is considered a divider
 bool isTblDiv(string& s) {
   int pipeCnt = 0;
   for(char& c : s)
@@ -185,6 +196,9 @@ bool isTblDiv(string& s) {
   return 0 < pipeCnt;
 }
 
+// determines whether or not the string is likely a row in the table; essentially,
+// any line that starts with a pipe character (optionally prepended with whitespace)
+// is considered a table line
 bool isTblLn(string& s) {
   for(char& c : s) {
     if('|' == c)
@@ -195,6 +209,8 @@ bool isTblLn(string& s) {
   return false;
 }
 
+// appends the source vector to the destination vector, and then wipes the
+// source vector
 void commitBuf(vector<string> &src, vector<string> &dest) {
   if(0 < src.size()) {
     dest.insert(end(dest), begin(src), end(src));
@@ -202,6 +218,12 @@ void commitBuf(vector<string> &src, vector<string> &dest) {
   }
 }
 
+// counts columns in a row; basically, the needle is considered the delimeter
+// (and should be a pipe for markdown tables); with consideration for the
+// standard slash-driven escape mechanism, only unescaped pipes are counted;
+// a well-formed table is going to have one fewer column than there are pipes;
+// however, we're also allowing for when the author forgets to add a trailing
+// pipe, in which case the number of columns will match the number of pipes
 int countCols(const string &haystack, const char needle) {
   int count = 0;
   bool esc = false;
@@ -226,6 +248,8 @@ int countCols(const string &haystack, const char needle) {
   return count - 1;
 }
 
+// here, we're taking a string and splitting it up into a vector delimited by
+// unescaped pipes (and we're using the standard slash-driven escape mechanism)
 vector<string> splitCols(const string &s) {
   vector<string> res;
   string curr;
@@ -256,6 +280,7 @@ vector<string> splitCols(const string &s) {
   return res;
 }
 
+// standard trim operation--remove whitespace from the beginning and end of a string
 void trim(string &s) {
   s.erase(
       s.begin(),
@@ -268,6 +293,7 @@ void trim(string &s) {
       }).base(), s.end());
 }
 
+// if the provided string has any non-whitespace characters, spit out a newline
 void tryPad(const string &s) {
   for(size_t i = 0; i < s.size(); ++i)
     if(!isspace(s[i])) {
