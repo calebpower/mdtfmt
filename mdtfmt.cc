@@ -14,7 +14,7 @@ void trim(string &s);
 
 int main(int argc, char** argv) {
   if(2 != argc) {
-    cerr << "Please specify a file." << endl;
+    cerr << "Usage: " << argv[0] << " <input>" << endl;
     return 1;
   }
 
@@ -97,13 +97,6 @@ int main(int argc, char** argv) {
           }
         }
 
-        // XXX
-        cout << endl;
-        for(size_t i = 0; i < maxCols; i++) {
-          cout << colSzs[i] << " ";
-        }
-        cout << endl << endl;
-
         // here, we're going to go ahead and take a look at alignment
         const size_t minDashes = 3; // we need to start off with at least three dashes ("---")
         for(size_t i = 0; i < maxCols; i++) { // for each column
@@ -135,19 +128,22 @@ int main(int argc, char** argv) {
         }
 
         // XXX we're just print stuff out here
-
-        cout << endl;
-        for(size_t i = 0; i < maxCols; i++) {
-          cout << colSzs[i] << " ";
+        for(size_t i = 0; i < content.size(); i++) {
+          cout << content[i] << endl;
         }
-        cout << endl << endl;
+        content.clear();
 
         for(size_t i = 0; i < buf.size(); i++) { // rows
+          cout << "|";
           for(size_t j = 0; j < maxCols; j++) { // columns
-            cout << "[" << tblArr[i][j] << "]\t";
+            //cout << "[" << tblArr[i][j] << "]\t";
+            cout << tblArr[i][j] << "|";
           }
           cout << endl;
         }
+
+        //content.resize(content.size() - buf.size());
+        buf.clear();
 
       }
 
@@ -157,6 +153,11 @@ int main(int argc, char** argv) {
     // add the current line to the buffer
     buf.push_back(line);
 
+  }
+
+  // print the rest of the content
+  for(size_t i = 0; i < content.size(); i++) {
+    cout << content[i] << endl;
   }
 
   srcFile.close();
