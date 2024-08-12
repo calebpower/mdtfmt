@@ -29,7 +29,7 @@ If you want `mdtfmt` to spit the prettified text to `stdout`, you can just:
 going to be helpful if you want to keybind this to your Emacs instance or whatever.
 
 ```sh
-./mdtfmt uglyFile.txt | sponge > uglyFile.txt
+./mdtfmt uglyFile.txt | sponge uglyFile.txt
 ```
 
 The rules to determine what a table is and isn't are pretty loose (and they have
