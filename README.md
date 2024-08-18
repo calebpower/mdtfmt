@@ -6,39 +6,7 @@ Markdown table formatter. So I threw this one together.
 
 It probably ain't pretty, so use it at your own risk.
 
-## Building
-
-If you're gonna use the Makefile, you should have `make` and `clang`. But it's
-not a very complicated project, so you can probably use any modern C++ compiler.
-
-```sh
-make
-```
-
-This should drop `mdtfmt` in the working directory.
-
-## Usage
-
-If you want `mdtfmt` to spit the prettified text to `stdout`, you can just:
-
-```sh
-./mdtfmt uglyFile.txt
-```
-
-...and redirect that where you want it to go. I find that `sponge` is probably
-going to be helpful if you want to keybind this to your Emacs instance or whatever.
-
-```sh
-./mdtfmt uglyFile.txt | sponge uglyFile.txt
-```
-
-The rules to determine what a table is and isn't are pretty loose (and they have
-to be, to some degree, because the assumption is that the tables aren't formatted
-well if you've resorted to this tool). But good rule of thumb is that the more
-well-formatted your tables are, the more likely this tool's going to catch and
-format the appropriate lines.
-
-### Features
+## Features
 
 There are a few things this thing will do for you:
 
@@ -55,6 +23,70 @@ There are a bunch of things it doesn't do:
 - Build a table out of mahogony.
 - Ship custom tables.
 - Spill coffee on a table.
+
+## Building
+
+If you're gonna use the Makefile, you should have `make` and `clang`. But it's
+not a very complicated project, so you can probably use any modern C++ compiler.
+
+```bash
+make
+```
+
+This should drop `mdtfmt` in the working directory.
+
+## Usage
+
+The rules to determine what a table is and isn't are pretty loose (and they have
+to be, to some degree, because the assumption is that the tables aren't formatted
+well if you've resorted to this tool). But good rule of thumb is that the more
+well-formatted your tables are, the more likely this tool's going to catch and
+format the appropriate lines.
+
+If you want `mdtfmt` to spit the prettified text to `stdout`, you can just:
+
+```bash
+./mdtfmt uglyFile.txt
+```
+
+...and redirect that where you want it to go. I find that `sponge` is probably
+going to be helpful if you want to keybind this to your Emacs instance or whatever.
+
+```bash
+./mdtfmt uglyFile.txt | sponge uglyFile.txt
+```
+
+I personally use this tool as a pre-commit
+[hook](https://www.atlassian.com/git/tutorials/git-hooks) for my documentation
+repos (for when I'm using something like [mdBook](https://rust-lang.github.io/mdBook)
+for static documentation sites or something). On a FreeBSD machine (which I
+frequently use), I have the following script at `.git/hooks/pre-commit` (ensuring
+that the execution bit is set):
+
+```bash
+#!/usr/local/bin/bash
+
+if [ "" == "$(which mdtfmt)" ]; then
+  printf 'missing calebpower/mdtfmt\n'
+  exit 1
+fi
+
+if [ "" == "$(which sponge)" ]; then
+  printf 'missing moreutils/sponge\n'
+  exit 1
+fi
+
+for chg in $(git diff --cached --name-only); do
+  printf 'mdtfmt: formatting %s\n' "${chg}"
+  mdtfmt $chg | sponge $chg
+done
+```
+
+Obviously, if you're going to copypasta that script you should make sure that
+you've set the shebang correctly if you're using a different shell or bash is
+somewhere else on your OS (Linux distros tend to have it at `/bin/bash` whereas
+FreeBSD has it at `/usr/local/bin/bash`). The script essentially just ensures
+that the modified Markdown files are formatted before they're committed.
 
 ## Copyright / License / Disclaimer
 
