@@ -76,7 +76,7 @@ if [ "" == "$(which sponge)" ]; then
   exit 1
 fi
 
-for chg in $(git diff --cached --name-only); do
+for chg in $(git diff --cached --name-only | grep -e '.*\.[Mm][Dd]$'); do
   printf 'mdtfmt: formatting %s\n' "${chg}"
   mdtfmt $chg | sponge $chg
 done
