@@ -2,9 +2,11 @@
 * Copyright (c) 2024 Caleb L. Power.
 */
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
 
 using namespace std;
 
