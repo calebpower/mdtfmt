@@ -66,20 +66,28 @@ that the execution bit is set):
 ```bash
 #!/usr/local/bin/bash
 
-if [ "" == "$(which mdtfmt)" ]; then
-  printf 'missing calebpower/mdtfmt\n'
-  exit 1
-fi
+for bin in mdtfmt sponge sha256sum cut; do
+  if [ "" == "$(which $bin)" ]; then
+    printf 'missing %s\n' "${bin}"
+    exit 1
+  fi
+done
 
-if [ "" == "$(which sponge)" ]; then
-  printf 'missing moreutils/sponge\n'
-  exit 1
-fi
+exit_code=0
 
 for chg in $(git diff --cached --name-only | grep -e '.*\.[Mm][Dd]$'); do
-  printf 'mdtfmt: formatting %s\n' "${chg}"
+  prehash=$(sha256sum "${chg}" | cut -d' ' -f1)
+  printf 'mdtfmt: formatting %s ' "${chg}"
   mdtfmt $chg | sponge $chg
+  if [ "${prehash}" != "$(sha256sum "${chg}" | cut -d' ' -f1)" ]; then
+    printf '(changed)\n'
+    exit_code=1
+  else
+    printf '(unchanged)\n'
+  fi
 done
+
+exit $exit_code
 ```
 
 Obviously, if you're going to copypasta that script you should make sure that
